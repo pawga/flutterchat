@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutterchat/widgets/pickers/user_image_picker.dart';
 
 class AuthForm extends StatefulWidget {
   const AuthForm(
@@ -10,6 +13,7 @@ class AuthForm extends StatefulWidget {
     String email,
     String password,
     String userName,
+    File image,
     bool isLogin,
     BuildContext ctx,
   ) submitFn;
@@ -24,15 +28,36 @@ class _AuthFormState extends State<AuthForm> {
   var _userEmail = '';
   var _userName = '';
   var _userPassword = '';
+  File? _userImageFile;
+
+  void _pickedImage(File image) {
+    _userImageFile = image;
+  }
 
   void _trySubmit() {
     final isValid = _formKey.currentState?.validate() ?? false;
     FocusScope.of(context).unfocus();
 
+    if (_userImageFile == null && !_isLogin) {
+      Scaffold.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please pick an image.'),
+          backgroundColor: Theme.of(context).errorColor,
+        ),
+      );
+      return;
+    }
+
     if (isValid) {
       _formKey.currentState?.save();
-      widget.submitFn(_userEmail.trim(), _userPassword.trim(), _userName.trim(),
-          _isLogin, context);
+      widget.submitFn(
+        _userEmail.trim(),
+        _userPassword.trim(),
+        _userName.trim(),
+        _userImageFile!,
+        _isLogin,
+        context,
+      );
     }
   }
 
@@ -49,10 +74,11 @@ class _AuthFormState extends State<AuthForm> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
+                  if (!_isLogin) UserImagePicker(_pickedImage),
                   TextFormField(
-                    key: ValueKey('email'),
+                    key: const ValueKey('email'),
                     validator: (value) {
-                      if (value != null && (value.isEmpty || !value.contains('@'))) {
+                      if (value != null && (value.isEmpty || !value!.contains('@'))) {
                         return 'Please enter a valid email address.';
                       }
                       return null;
@@ -62,7 +88,9 @@ class _AuthFormState extends State<AuthForm> {
                       labelText: 'Email address',
                     ),
                     onSaved: (value) {
-                      _userEmail = value ?? '';
+                      if (value != null) {
+                        _userEmail = value;
+                      }
                     },
                   ),
                   if (!_isLogin)
@@ -76,7 +104,9 @@ class _AuthFormState extends State<AuthForm> {
                       },
                       decoration: const InputDecoration(labelText: 'Username'),
                       onSaved: (value) {
-                        _userName = value ?? '';
+                        if (value != null) {
+                          _userName = value;
+                        }
                       },
                     ),
                   TextFormField(
@@ -90,10 +120,12 @@ class _AuthFormState extends State<AuthForm> {
                     decoration: const InputDecoration(labelText: 'Password'),
                     obscureText: true,
                     onSaved: (value) {
-                      _userPassword = value ?? '';
+                      if (value != null) {
+                        _userPassword = value;
+                      }
                     },
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   if (widget.isLoading) CircularProgressIndicator(),
                   if (!widget.isLoading)
                     RaisedButton(
