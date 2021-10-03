@@ -9,6 +9,7 @@ class Messages extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
         return StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('chat')
@@ -31,10 +32,11 @@ class Messages extends StatelessWidget {
                   chatDocs[index]['text'],
                   chatDocs[index]['username'],
                   chatDocs[index]['userImage'],
-                  chatDocs[index]['userId'] == '', // futureSnapshot.data.uid,
-                  key: ValueKey(chatDocs[index].id),
+                  chatDocs[index]['userId'] == user?.uid,
+                  key: ValueKey(chatDocs[index].id, //.documentID),
                 ),
-              );
+              )
             });
+
   }
 }
